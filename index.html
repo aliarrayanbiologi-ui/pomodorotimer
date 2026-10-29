@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f6fb" />
+  <title>Pomodoro — Fokus dengan Tenang</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Pomodoro beranda">
+        <span class="brand-mark" aria-hidden="true">◷</span>
+        <span>pomodoro<span class="brand-dot">.</span></span>
+      </a>
+      <span class="top-note"><span class="sparkle" aria-hidden="true">✦</span> ruang kecil untuk fokus</span>
+    </header>
+
+    <section class="timer-card" aria-label="Timer Pomodoro">
+      <div class="card-glow" aria-hidden="true"></div>
+      <div class="mode-switch" role="group" aria-label="Pilih mode timer">
+        <button class="mode-tab active" id="focusTab" type="button" aria-pressed="true">Fokus</button>
+        <button class="mode-tab" id="breakTab" type="button" aria-pressed="false">Istirahat</button>
+      </div>
+
+      <p class="session-label" id="sessionLabel">WAKTU UNTUK FOKUS</p>
+      <div class="timer-display" id="timerDisplay" role="timer" aria-live="off">25:00</div>
+      <p class="timer-message" id="timerMessage" aria-live="polite">Satu hal dalam satu waktu.</p>
+
+      <div class="progress-track" aria-label="Progres sesi">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <div class="controls">
+        <button class="control-button secondary" id="resetButton" type="button" aria-label="Reset timer" title="Reset timer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8.25M3 3v5.25h5.25" /></svg>
+        </button>
+        <button class="control-button primary" id="startButton" type="button">
+          <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+          <svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h3v14H8zM15 5h3v14h-3z" /></svg>
+          <span id="startButtonText">Mulai fokus</span>
+        </button>
+        <button class="control-button secondary" id="skipButton" type="button" aria-label="Lewati sesi" title="Lewati sesi">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v14l11-7L5 5Zm14 0v14" /></svg>
+        </button>
+      </div>
+
+      <div class="cycle-row">
+        <div class="cycle-icon" aria-hidden="true">↻</div>
+        <span>Siklus selesai</span>
+        <strong id="cycleCount">0</strong>
+        <button class="reset-cycle" id="resetCycleButton" type="button">Atur ulang</button>
+      </div>
+    </section>
+
+    <section class="settings-card" aria-labelledby="settingsHeading">
+      <div class="settings-heading">
+        <div>
+          <p class="eyebrow">SESUAIKAN SESI</p>
+          <h2 id="settingsHeading">Ritmemu, aturanmu.</h2>
+        </div>
+        <span class="settings-symbol" aria-hidden="true">☼</span>
+      </div>
+      <div class="duration-settings">
+        <label class="duration-field focus-field" for="focusDuration">
+          <span class="field-label"><span class="field-dot"></span> Fokus</span>
+          <span class="input-wrap"><input id="focusDuration" type="number" min="1" max="180" value="25" inputmode="numeric" /><span>menit</span></span>
+        </label>
+        <div class="field-divider" aria-hidden="true"></div>
+        <label class="duration-field break-field" for="breakDuration">
+          <span class="field-label"><span class="field-dot"></span> Istirahat</span>
+          <span class="input-wrap"><input id="breakDuration" type="number" min="1" max="180" value="5" inputmode="numeric" /><span>menit</span></span>
+        </label>
+      </div>
+      <p class="settings-hint">Pilih durasi 1–180 menit. Perubahan diterapkan saat timer direset.</p>
+    </section>
+
+    <footer class="footer-note"><span>Tarik napas.</span> Kamu sedang membuat progres. <span class="footer-heart" aria-hidden="true">♥</span></footer>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>
