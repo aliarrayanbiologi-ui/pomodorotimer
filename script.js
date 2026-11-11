@@ -11,12 +11,12 @@ const cycleCount = document.getElementById('cycleCount');
 const toast = document.getElementById('toast');
 
 let mode = 'focus';
-let running = false;
-let remainingSeconds = Number(focusInput.value) * 60;
-let sessionLength = remainingSeconds;
 let cycles = 0;
-let timerInterval = null;
 let toastTimeout = null;
+const timers = {
+  focus: { remaining: Number(focusInput.value) * 60, length: Number(focusInput.value) * 60, running: false, interval: null },
+  break: { remaining: Number(breakInput.value) * 60, length: Number(breakInput.value) * 60, running: false, interval: null }
+};
 
 function getDuration(currentMode) {
   return Number(currentMode === 'focus' ? focusInput.value : breakInput.value) * 60;
@@ -28,12 +28,15 @@ function formatTime(seconds) {
   return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
 }
 
-// Render angka, progres sesi, label, dan warna berdasarkan mode aktif.
+// Render timer yang sedang dipilih, termasuk progres dan status tombolnya.
 function renderTimer() {
-  timerDisplay.textContent = formatTime(remainingSeconds);
-  const progress = sessionLength ? ((sessionLength - remainingSeconds) / sessionLength) * 100 : 0;
+  const timer = timers[mode];
+  timerDisplay.textContent = formatTime(timer.remaining);
+  const progress = timer.length ? ((timer.length - timer.remaining) / timer.length) * 100 : 0;
   progressFill.style.width = `${progress}%`;
-  document.title = `${formatTime(remainingSeconds)} — ${mode === 'focus' ? 'Fokus' : 'Istirahat'}`;
+  document.title = `${formatTime(timer.remaining)} — ${mode === 'focus' ? 'Fokus' : 'Istirahat'}`;
+  startButton.classList.toggle('is-running', timer.running);
+  startButtonText.textContent = timer.running ? 'Jeda' : 'Mulai ' + (mode === 'focus' ? 'fokus' : 'istirahat');
 }
 
 function setMode(nextMode) {
@@ -45,46 +48,46 @@ function setMode(nextMode) {
   document.getElementById('breakTab').setAttribute('aria-pressed', String(mode === 'break'));
   sessionLabel.textContent = mode === 'focus' ? 'WAKTU UNTUK FOKUS' : 'WAKTU UNTUK ISTIRAHAT';
   timerMessage.textContent = mode === 'focus' ? 'Satu hal dalam satu waktu.' : 'Kamu sudah bekerja dengan baik.';
-  remainingSeconds = getDuration(mode);
-  sessionLength = remainingSeconds;
   renderTimer();
 }
 
-function setRunning(isRunning) {
-  running = isRunning;
-  startButton.classList.toggle('is-running', running);
-  startButtonText.textContent = running ? 'Jeda' : 'Mulai ' + (mode === 'focus' ? 'fokus' : 'istirahat');
-}
-
-function pauseTimer() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  setRunning(false);
+function pauseTimer(currentMode = mode) {
+  const timer = timers[currentMode];
+  clearInterval(timer.interval);
+  timer.interval = null;
+  timer.running = false;
+  if (currentMode === mode) renderTimer();
 }
 
 function startTimer() {
-  if (running) return;
-  setRunning(true);
-  timerInterval = setInterval(() => {
-    remainingSeconds -= 1;
-    renderTimer();
-    if (remainingSeconds <= 0) finishSession();
+  const timer = timers[mode];
+  if (timer.running) return;
+  timer.running = true;
+  renderTimer();
+  timer.interval = setInterval(() => {
+    timer.remaining -= 1;
+    if (mode === (timer === timers.focus ? 'focus' : 'break')) renderTimer();
+    if (timer.remaining <= 0) finishSession(timer === timers.focus ? 'focus' : 'break');
   }, 1000);
 }
 
-// Setiap sesi berganti otomatis; satu siklus dihitung setelah fokus dan istirahat selesai.
-function finishSession() {
-  pauseTimer();
-  remainingSeconds = 0;
-  renderTimer();
-  const completedMode = mode;
+// Sesi yang selesai beralih otomatis ke mode berikutnya.
+function finishSession(completedMode = mode) {
+  const timer = timers[completedMode];
+  pauseTimer(completedMode);
+  timer.remaining = 0;
+  if (mode === completedMode) renderTimer();
 
   if (completedMode === 'focus') {
+    timer.remaining = getDuration('focus');
+    timer.length = timer.remaining;
     setMode('break');
     showToast('Sesi fokus selesai — waktunya istirahat! 🌿');
   } else {
     cycles += 1;
     cycleCount.textContent = cycles;
+    timer.remaining = getDuration('break');
+    timer.length = timer.remaining;
     setMode('focus');
     showToast(`Siklus ${cycles} selesai — siap fokus kembali? ✨`);
   }
@@ -94,6 +97,9 @@ function finishSession() {
       body: completedMode === 'focus' ? 'Ambil jeda sejenak dan segarkan pikiran.' : 'Istirahat selesai. Mulai sesi fokus baru.'
     });
   }
+
+  // Lanjutkan otomatis ke mode berikutnya untuk membentuk siklus fokus–istirahat.
+  startTimer();
 }
 
 // Pesan visual non-blocking agar perpindahan sesi tetap terasa jelas.
@@ -105,15 +111,16 @@ function showToast(message) {
 }
 
 function resetTimer() {
-  pauseTimer();
-  remainingSeconds = getDuration(mode);
-  sessionLength = remainingSeconds;
-  renderTimer();
+  pauseTimer(mode);
+  const timer = timers[mode];
+  timer.remaining = getDuration(mode);
+  timer.length = timer.remaining;
   timerMessage.textContent = mode === 'focus' ? 'Satu hal dalam satu waktu.' : 'Kamu sudah bekerja dengan baik.';
+  renderTimer();
 }
 
 function selectMode(nextMode) {
-  pauseTimer();
+  // Tiap mode menyimpan progres dan status jalannya sendiri saat tab diganti.
   setMode(nextMode);
 }
 
@@ -123,9 +130,12 @@ function validateDuration(input) {
   return value;
 }
 
-startButton.addEventListener('click', () => running ? pauseTimer() : startTimer());
+startButton.addEventListener('click', () => {
+  if (timers[mode].running) pauseTimer(mode);
+  else startTimer();
+});
 document.getElementById('resetButton').addEventListener('click', resetTimer);
-document.getElementById('skipButton').addEventListener('click', finishSession);
+document.getElementById('skipButton').addEventListener('click', () => finishSession(mode));
 document.getElementById('focusTab').addEventListener('click', () => selectMode('focus'));
 document.getElementById('breakTab').addEventListener('click', () => selectMode('break'));
 document.getElementById('resetCycleButton').addEventListener('click', () => {
@@ -137,7 +147,13 @@ document.getElementById('resetCycleButton').addEventListener('click', () => {
 [focusInput, breakInput].forEach(input => {
   input.addEventListener('change', () => {
     validateDuration(input);
-    if (!running) resetTimer();
+    const changedMode = input === focusInput ? 'focus' : 'break';
+    const timer = timers[changedMode];
+    if (!timer.running) {
+      timer.remaining = getDuration(changedMode);
+      timer.length = timer.remaining;
+      if (mode === changedMode) renderTimer();
+    }
   });
 });
 
